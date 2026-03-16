@@ -1,6 +1,7 @@
 package terminal
 
 import terminal.model.BufferPosition
+import terminal.model.Cell
 import terminal.model.TextAttributes
 
 class TerminalBuffer(
@@ -62,6 +63,24 @@ class TerminalBuffer(
         cursorCol = (cursorCol + n).coerceAtMost(width - 1)
     }
 
+    fun writeText(text: String) {
+        if (text.isEmpty()) {
+            return
+        }
+
+        for (char in text) {
+            val line = screenLine(cursorRow)
+            line.setCell(
+                cursorCol,
+                Cell(char = char, isEmpty = false, attributes = currentAttributes, charWidth = 1)
+            )
+
+            if (advanceCursorWithoutScroll()) {
+                break
+            }
+        }
+    }
+
     fun getChar(position: BufferPosition): Char {
         val cell = when (position) {
             is BufferPosition.Screen -> screenLine(position.row).getCell(position.col)
@@ -84,6 +103,21 @@ class TerminalBuffer(
 
     fun getScreenContent(): String {
         return screen.joinToString("\n") { it.asString() }
+    }
+
+    private fun advanceCursorWithoutScroll(): Boolean {
+        cursorCol += 1
+        if (cursorCol >= width) {
+            cursorCol = 0
+            cursorRow += 1
+        }
+
+        if (cursorRow >= height) {
+            cursorRow = height - 1
+            return true
+        }
+
+        return false
     }
 
     private fun screenLine(row: Int): TerminalLine {

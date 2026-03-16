@@ -170,5 +170,61 @@ class TerminalBufferTest {
         }
     }
 
+    @Nested
+    inner class WriteTextTests {
+
+        @Test
+        fun writeText_writesFromCursorPosition() {
+            val buffer = createBuffer()
+            buffer.setCursor(1, 1)
+
+            buffer.writeText("Hi")
+
+            assertEquals('H', buffer.getChar(BufferPosition.Screen(row = 1, col = 1)))
+            assertEquals('i', buffer.getChar(BufferPosition.Screen(row = 1, col = 2)))
+        }
+
+        @Test
+        fun writeText_wrapsToNextLineWhenExceedingWidth() {
+            val buffer = createBuffer()
+            buffer.setCursor(3, 0)
+
+            buffer.writeText("abcd")
+
+            assertEquals('a', buffer.getChar(BufferPosition.Screen(row = 0, col = 3)))
+            assertEquals('b', buffer.getChar(BufferPosition.Screen(row = 0, col = 4)))
+            assertEquals('c', buffer.getChar(BufferPosition.Screen(row = 1, col = 0)))
+            assertEquals('d', buffer.getChar(BufferPosition.Screen(row = 1, col = 1)))
+            assertEquals(2, buffer.getCursorCol())
+            assertEquals(1, buffer.getCursorRow())
+        }
+
+        @Test
+        fun writeText_emptyStringDoesNotMoveCursor() {
+            val buffer = createBuffer()
+            buffer.setCursor(2, 2)
+
+            buffer.writeText("")
+
+            assertEquals(2, buffer.getCursorCol())
+            assertEquals(2, buffer.getCursorRow())
+        }
+
+        @Test
+        fun writeText_usesCurrentAttributes() {
+            val buffer = createBuffer()
+            val attributes = TextAttributes(
+                foreground = TerminalColor.Standard(2),
+                background = TerminalColor.Standard(3),
+                style = TextStyle(bold = true, italic = true, underline = false)
+            )
+            buffer.setAttributes(attributes)
+
+            buffer.writeText("X")
+
+            assertEquals(attributes, buffer.getAttributes(BufferPosition.Screen(row = 0, col = 0)))
+        }
+    }
+
     private fun createBuffer(): TerminalBuffer = TerminalBuffer(width = 5, height = 3, maxScrollbackSize = 10)
 }
