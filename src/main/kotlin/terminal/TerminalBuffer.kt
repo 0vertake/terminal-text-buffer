@@ -70,13 +70,23 @@ class TerminalBuffer(
         }
 
         for (char in text) {
-            val line = screenLine(cursorRow)
-            line.setCell(
-                cursorCol,
-                Cell(char = char, isEmpty = false, attributes = currentAttributes, charWidth = 1)
-            )
+            if (isWide(char)) {
+                if (width == 1) {
+                    writeNormalChar(char)
+                    advanceCursorBy(1)
+                    continue
+                }
 
-            advanceCursorWithScroll()
+                if (cursorCol == width - 1) {
+                    advanceCursorBy(1)
+                }
+
+                writeWideChar(char)
+                advanceCursorBy(2)
+            } else {
+                writeNormalChar(char)
+                advanceCursorBy(1)
+            }
         }
     }
 
@@ -162,16 +172,38 @@ class TerminalBuffer(
         return lines.joinToString("\n")
     }
 
-    private fun advanceCursorWithScroll() {
-        cursorCol += 1
-        if (cursorCol >= width) {
-            cursorCol = 0
-            cursorRow += 1
-        }
+    private fun writeNormalChar(char: Char) {
+        val line = screenLine(cursorRow)
+        line.setCell(
+            cursorCol,
+            Cell(char = char, isEmpty = false, attributes = currentAttributes, charWidth = 1)
+        )
+    }
 
-        if (cursorRow >= height) {
-            scrollUp()
-            cursorRow = height - 1
+    private fun writeWideChar(char: Char) {
+        val line = screenLine(cursorRow)
+        line.setCell(
+            cursorCol,
+            Cell(char = char, isEmpty = false, attributes = currentAttributes, charWidth = 2)
+        )
+        line.setCell(
+            cursorCol + 1,
+            Cell(char = '\u0000', isEmpty = false, attributes = currentAttributes, charWidth = 1)
+        )
+    }
+
+    private fun advanceCursorBy(steps: Int) {
+        repeat(steps) {
+            cursorCol += 1
+            if (cursorCol >= width) {
+                cursorCol = 0
+                cursorRow += 1
+            }
+
+            if (cursorRow >= height) {
+                scrollUp()
+                cursorRow = height - 1
+            }
         }
     }
 
@@ -192,5 +224,18 @@ class TerminalBuffer(
     private fun scrollbackLine(row: Int): TerminalLine {
         require(row in 0 until scrollback.size) { "Row must be in 0 until ${scrollback.size}, got $row" }
         return scrollback.elementAt(row)
+    }
+
+    private fun isWide(char: Char): Boolean {
+        val code = char.code
+        return code in 0x1100..0x115F ||
+            code in 0x2329..0x232A ||
+            code in 0x2E80..0xA4CF ||
+            code in 0xAC00..0xD7A3 ||
+            code in 0xF900..0xFAFF ||
+            code in 0xFE10..0xFE19 ||
+            code in 0xFE30..0xFE6F ||
+            code in 0xFF00..0xFF60 ||
+            code in 0xFFE0..0xFFE6
     }
 }

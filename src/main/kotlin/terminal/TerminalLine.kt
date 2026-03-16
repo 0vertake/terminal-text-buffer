@@ -34,7 +34,7 @@ class TerminalLine(val width: Int) {
     }
 
     fun asString(): String {
-        val lastContentIndex = cells.indexOfLast { !it.isEmpty }
+        val lastContentIndex = cells.indexOfLast { !it.isEmpty && it.char != '\u0000' }
         if (lastContentIndex < 0) {
             return ""
         }
@@ -42,7 +42,11 @@ class TerminalLine(val width: Int) {
         val builder = StringBuilder(lastContentIndex + 1)
         for (i in 0..lastContentIndex) {
             val cell = cells[i]
-            builder.append(if (cell.isEmpty) ' ' else cell.char)
+            when {
+                cell.isEmpty -> builder.append(' ')
+                cell.char == '\u0000' -> Unit
+                else -> builder.append(cell.char)
+            }
         }
         return builder.toString()
     }
