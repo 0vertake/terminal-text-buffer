@@ -115,6 +115,10 @@ class TerminalBuffer(
         line.fillEmpty()
     }
 
+    fun insertEmptyLineAtBottom() {
+        scrollUp()
+    }
+
     fun getChar(position: BufferPosition): Char {
         val cell = when (position) {
             is BufferPosition.Screen -> screenLine(position.row).getCell(position.col)

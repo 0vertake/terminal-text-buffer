@@ -332,6 +332,39 @@ class TerminalBufferTest {
     }
 
     @Nested
+    inner class InsertEmptyLineTests {
+
+        @Test
+        fun insertEmptyLineAtBottom_pushesTopLineToScrollback() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.fillLine(0, 'A')
+            buffer.fillLine(1, 'B')
+
+            buffer.insertEmptyLineAtBottom()
+
+            assertEquals("BBB\n", buffer.getScreenContent())
+            val scrollback = scrollbackLines(buffer)
+            assertEquals(1, scrollback.size)
+            assertEquals("AAA", scrollback[0].asString())
+        }
+
+        @Test
+        fun insertEmptyLineAtBottom_evictionHonorsScrollbackCapacity() {
+            val buffer = TerminalBuffer(width = 2, height = 2, maxScrollbackSize = 1)
+            buffer.fillLine(0, 'A')
+            buffer.fillLine(1, 'B')
+
+            buffer.insertEmptyLineAtBottom()
+            buffer.fillLine(1, 'C')
+            buffer.insertEmptyLineAtBottom()
+
+            val scrollback = scrollbackLines(buffer)
+            assertEquals(1, scrollback.size)
+            assertEquals("BB", scrollback[0].asString())
+        }
+    }
+
+    @Nested
     inner class ScrollbackTests {
 
         @Test
