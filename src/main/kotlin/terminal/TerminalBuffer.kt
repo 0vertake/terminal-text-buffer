@@ -1,5 +1,6 @@
 package terminal
 
+import kotlin.math.min
 import terminal.model.BufferPosition
 import terminal.model.Cell
 import terminal.model.TextAttributes
@@ -77,6 +78,31 @@ class TerminalBuffer(
 
             advanceCursorWithScroll()
         }
+    }
+
+    fun insertText(text: String) {
+        if (text.isEmpty()) {
+            return
+        }
+
+        val line = screenLine(cursorRow)
+        val insertLength = min(text.length, width - cursorCol)
+        if (insertLength <= 0) {
+            return
+        }
+
+        for (col in (width - 1) downTo (cursorCol + insertLength)) {
+            line.setCell(col, line.getCell(col - insertLength))
+        }
+
+        for (i in 0 until insertLength) {
+            line.setCell(
+                cursorCol + i,
+                Cell(char = text[i], isEmpty = false, attributes = currentAttributes, charWidth = 1)
+            )
+        }
+
+        cursorCol = (cursorCol + insertLength).coerceAtMost(width - 1)
     }
 
     fun getChar(position: BufferPosition): Char {

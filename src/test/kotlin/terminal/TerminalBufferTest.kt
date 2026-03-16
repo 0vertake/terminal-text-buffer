@@ -227,6 +227,55 @@ class TerminalBufferTest {
     }
 
     @Nested
+    inner class InsertTextTests {
+
+        @Test
+        fun insertText_insertsAtStartAndShiftsExistingContent() {
+            val buffer = createBuffer()
+            buffer.writeText("abc")
+            buffer.setCursor(0, 0)
+
+            buffer.insertText("Z")
+
+            assertEquals("Zabc", buffer.getLine(row = 0, fromScrollback = false))
+        }
+
+        @Test
+        fun insertText_insertsInMiddleAndDropsOverflow() {
+            val buffer = createBuffer()
+            buffer.writeText("abcde")
+            buffer.setCursor(2, 0)
+
+            buffer.insertText("Z")
+
+            assertEquals("abZcd", buffer.getLine(row = 0, fromScrollback = false))
+        }
+
+        @Test
+        fun insertText_insertsAtEndWithoutShifting() {
+            val buffer = createBuffer()
+            buffer.writeText("abcd")
+            buffer.setCursor(4, 0)
+
+            buffer.insertText("Z")
+
+            assertEquals("abcdZ", buffer.getLine(row = 0, fromScrollback = false))
+        }
+
+        @Test
+        fun insertText_truncatesWhenTextExceedsRemainingSpace() {
+            val buffer = createBuffer()
+            buffer.writeText("abcde")
+            buffer.setCursor(3, 0)
+
+            buffer.insertText("XYZ")
+
+            assertEquals("abcXY", buffer.getLine(row = 0, fromScrollback = false))
+            assertEquals(4, buffer.getCursorCol())
+        }
+    }
+
+    @Nested
     inner class ScrollbackTests {
 
         @Test
