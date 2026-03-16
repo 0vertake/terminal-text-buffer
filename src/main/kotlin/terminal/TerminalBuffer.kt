@@ -105,6 +105,16 @@ class TerminalBuffer(
         cursorCol = (cursorCol + insertLength).coerceAtMost(width - 1)
     }
 
+    fun fillLine(row: Int, char: Char) {
+        val line = screenLine(row)
+        line.fill(char, currentAttributes)
+    }
+
+    fun fillLineEmpty(row: Int) {
+        val line = screenLine(row)
+        line.fillEmpty()
+    }
+
     fun getChar(position: BufferPosition): Char {
         val cell = when (position) {
             is BufferPosition.Screen -> screenLine(position.row).getCell(position.col)

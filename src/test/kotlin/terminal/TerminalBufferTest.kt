@@ -276,6 +276,62 @@ class TerminalBufferTest {
     }
 
     @Nested
+    inner class FillLineTests {
+
+        @Test
+        fun fillLine_fillsFirstRowWithChar() {
+            val buffer = createBuffer()
+
+            buffer.fillLine(0, 'X')
+
+            assertEquals("XXXXX", buffer.getLine(row = 0, fromScrollback = false))
+        }
+
+        @Test
+        fun fillLine_fillsLastRowWithChar() {
+            val buffer = createBuffer()
+
+            buffer.fillLine(2, 'Y')
+
+            assertEquals('Y', buffer.getChar(BufferPosition.Screen(row = 2, col = 4)))
+        }
+
+        @Test
+        fun fillLine_usesCurrentAttributes() {
+            val buffer = createBuffer()
+            val attributes = TextAttributes(
+                foreground = TerminalColor.Standard(1),
+                background = TerminalColor.Standard(2),
+                style = TextStyle(bold = true, italic = false, underline = true)
+            )
+            buffer.setAttributes(attributes)
+
+            buffer.fillLine(1, 'Z')
+
+            assertEquals(attributes, buffer.getAttributes(BufferPosition.Screen(row = 1, col = 0)))
+        }
+
+        @Test
+        fun fillLineEmpty_resetsRowToBlank() {
+            val buffer = createBuffer()
+            buffer.fillLine(1, 'Q')
+
+            buffer.fillLineEmpty(1)
+
+            assertEquals("", buffer.getLine(row = 1, fromScrollback = false))
+        }
+
+        @Test
+        fun fillLine_rejectsInvalidRow() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.fillLine(3, 'X')
+            }
+        }
+    }
+
+    @Nested
     inner class ScrollbackTests {
 
         @Test
