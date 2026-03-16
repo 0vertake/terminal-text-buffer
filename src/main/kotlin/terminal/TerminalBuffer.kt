@@ -131,7 +131,7 @@ class TerminalBuffer(
     fun getChar(position: BufferPosition): Char {
         val cell = when (position) {
             is BufferPosition.Screen -> screenLine(position.row).getCell(position.col)
-            is BufferPosition.Scrollback -> throw IllegalArgumentException("Scrollback access not supported yet")
+            is BufferPosition.Scrollback -> scrollbackLine(position.row).getCell(position.col)
         }
         return if (cell.isEmpty) ' ' else cell.char
     }
@@ -139,17 +139,27 @@ class TerminalBuffer(
     fun getAttributes(position: BufferPosition): TextAttributes {
         return when (position) {
             is BufferPosition.Screen -> screenLine(position.row).getCell(position.col).attributes
-            is BufferPosition.Scrollback -> throw IllegalArgumentException("Scrollback access not supported yet")
+            is BufferPosition.Scrollback -> scrollbackLine(position.row).getCell(position.col).attributes
         }
     }
 
     fun getLine(row: Int, fromScrollback: Boolean): String {
-        require(!fromScrollback) { "Scrollback access not supported yet" }
-        return screenLine(row).asString()
+        return if (fromScrollback) {
+            scrollbackLine(row).asString()
+        } else {
+            screenLine(row).asString()
+        }
     }
 
     fun getScreenContent(): String {
         return screen.joinToString("\n") { it.asString() }
+    }
+
+    fun getFullContent(): String {
+        val lines = ArrayList<String>(scrollback.size + screen.size)
+        scrollback.forEach { lines.add(it.asString()) }
+        screen.forEach { lines.add(it.asString()) }
+        return lines.joinToString("\n")
     }
 
     private fun advanceCursorWithScroll() {
@@ -177,5 +187,10 @@ class TerminalBuffer(
     private fun screenLine(row: Int): TerminalLine {
         require(row in 0 until height) { "Row must be in 0 until $height, got $row" }
         return screen.elementAt(row)
+    }
+
+    private fun scrollbackLine(row: Int): TerminalLine {
+        require(row in 0 until scrollback.size) { "Row must be in 0 until ${scrollback.size}, got $row" }
+        return scrollback.elementAt(row)
     }
 }

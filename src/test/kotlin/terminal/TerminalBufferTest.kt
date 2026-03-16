@@ -150,24 +150,6 @@ class TerminalBufferTest {
 
             assertEquals("\n\n", content)
         }
-
-        @Test
-        fun getLine_rejectsScrollbackAccessBeforeImplemented() {
-            val buffer = createBuffer()
-
-            assertThrows(IllegalArgumentException::class.java) {
-                buffer.getLine(row = 0, fromScrollback = true)
-            }
-        }
-
-        @Test
-        fun getChar_rejectsScrollbackAccessBeforeImplemented() {
-            val buffer = createBuffer()
-
-            assertThrows(IllegalArgumentException::class.java) {
-                buffer.getChar(BufferPosition.Scrollback(row = 0, col = 0))
-            }
-        }
     }
 
     @Nested
@@ -443,6 +425,58 @@ class TerminalBufferTest {
 
             assertEquals(1, buffer.getCursorRow())
             assertEquals(0, buffer.getCursorCol())
+        }
+    }
+
+    @Nested
+    inner class ScrollbackContentTests {
+
+        @Test
+        fun getChar_readsFromScrollback() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            val char = buffer.getChar(BufferPosition.Scrollback(row = 0, col = 1))
+
+            assertEquals('b', char)
+        }
+
+        @Test
+        fun getAttributes_readsFromScrollback() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            val attributes = TextAttributes(
+                foreground = TerminalColor.Standard(6),
+                background = TerminalColor.Standard(1),
+                style = TextStyle(bold = true, italic = false, underline = false)
+            )
+            buffer.setAttributes(attributes)
+            buffer.writeText("abc")
+            buffer.setAttributes(TextAttributes())
+            buffer.writeText("def")
+
+            val stored = buffer.getAttributes(BufferPosition.Scrollback(row = 0, col = 0))
+
+            assertEquals(attributes, stored)
+        }
+
+        @Test
+        fun getLine_readsFromScrollback() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            val line = buffer.getLine(row = 0, fromScrollback = true)
+
+            assertEquals("abc", line)
+        }
+
+        @Test
+        fun getFullContent_returnsScrollbackThenScreen() {
+            val buffer = TerminalBuffer(width = 2, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            val content = buffer.getFullContent()
+
+            assertEquals("ab\ncd\nef\n", content)
         }
     }
 
