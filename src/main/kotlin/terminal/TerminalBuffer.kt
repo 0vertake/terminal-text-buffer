@@ -6,12 +6,17 @@ import terminal.model.Cell
 import terminal.model.TextAttributes
 
 class TerminalBuffer(
-    val width: Int,
-    val height: Int,
+    width: Int,
+    height: Int,
     val maxScrollbackSize: Int = 1000
 ) {
     private val screen: ArrayDeque<TerminalLine>
     private val scrollback: ArrayDeque<TerminalLine>
+
+    var width: Int = width
+        private set
+    var height: Int = height
+        private set
 
     private var cursorCol: Int = 0
     private var cursorRow: Int = 0
@@ -136,6 +141,46 @@ class TerminalBuffer(
     fun clearAll() {
         clearScreen()
         scrollback.clear()
+    }
+
+    fun resize(newWidth: Int, newHeight: Int) {
+        require(newWidth >= 1) { "Width must be at least 1, got $newWidth" }
+        require(newHeight >= 1) { "Height must be at least 1, got $newHeight" }
+
+        val oldWidth = width
+        val oldHeight = height
+        val screenSnapshot = screen.toList()
+
+        if (newHeight < oldHeight) {
+            val removed = screenSnapshot.drop(newHeight)
+            for (line in removed) {
+                scrollback.addLast(line.copy())
+                if (scrollback.size > maxScrollbackSize) {
+                    scrollback.removeFirst()
+                }
+            }
+        }
+
+        val kept = screenSnapshot.take(newHeight)
+        screen.clear()
+
+        for (line in kept) {
+            val resizedLine = TerminalLine(newWidth)
+            val copyWidth = min(oldWidth, newWidth)
+            for (col in 0 until copyWidth) {
+                resizedLine.setCell(col, line.getCell(col))
+            }
+            screen.addLast(resizedLine)
+        }
+
+        while (screen.size < newHeight) {
+            screen.addLast(TerminalLine(newWidth))
+        }
+
+        width = newWidth
+        height = newHeight
+        cursorCol = cursorCol.coerceIn(0, width - 1)
+        cursorRow = cursorRow.coerceIn(0, height - 1)
     }
 
     fun getChar(position: BufferPosition): Char {
