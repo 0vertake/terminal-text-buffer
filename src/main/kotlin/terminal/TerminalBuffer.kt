@@ -119,6 +119,15 @@ class TerminalBuffer(
         scrollUp()
     }
 
+    fun clearScreen() {
+        screen.forEach { it.fillEmpty() }
+    }
+
+    fun clearAll() {
+        clearScreen()
+        scrollback.clear()
+    }
+
     fun getChar(position: BufferPosition): Char {
         val cell = when (position) {
             is BufferPosition.Screen -> screenLine(position.row).getCell(position.col)

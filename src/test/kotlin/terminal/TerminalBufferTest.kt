@@ -365,6 +365,38 @@ class TerminalBufferTest {
     }
 
     @Nested
+    inner class ClearTests {
+
+        @Test
+        fun clearScreen_blanksScreenKeepsScrollbackAndCursor() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+            buffer.setCursor(2, 1)
+
+            buffer.clearScreen()
+
+            assertEquals("\n", buffer.getScreenContent())
+            assertEquals(1, scrollbackLines(buffer).size)
+            assertEquals(2, buffer.getCursorCol())
+            assertEquals(1, buffer.getCursorRow())
+        }
+
+        @Test
+        fun clearAll_blanksScreenAndClearsScrollbackKeepsCursor() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+            buffer.setCursor(1, 0)
+
+            buffer.clearAll()
+
+            assertEquals("\n", buffer.getScreenContent())
+            assertEquals(0, scrollbackLines(buffer).size)
+            assertEquals(1, buffer.getCursorCol())
+            assertEquals(0, buffer.getCursorRow())
+        }
+    }
+
+    @Nested
     inner class ScrollbackTests {
 
         @Test
