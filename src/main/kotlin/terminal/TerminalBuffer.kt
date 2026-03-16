@@ -10,10 +10,8 @@ class TerminalBuffer(
     private val screen: ArrayDeque<TerminalLine>
     private val scrollback: ArrayDeque<TerminalLine>
 
-    var cursorCol: Int = 0
-        private set
-    var cursorRow: Int = 0
-        private set
+    private var cursorCol: Int = 0
+    private var cursorRow: Int = 0
 
     var currentAttributes: TextAttributes = TextAttributes()
         private set
@@ -32,5 +30,34 @@ class TerminalBuffer(
 
     fun setAttributes(attributes: TextAttributes) {
         currentAttributes = attributes
+    }
+
+    fun getCursorCol(): Int = cursorCol
+
+    fun getCursorRow(): Int = cursorRow
+
+    fun setCursor(col: Int, row: Int) {
+        cursorCol = col.coerceIn(0, width - 1)
+        cursorRow = row.coerceIn(0, height - 1)
+    }
+
+    fun moveCursorUp(n: Int) {
+        require(n >= 0) { "n must be >= 0, got $n" }
+        cursorRow = (cursorRow - n).coerceAtLeast(0)
+    }
+
+    fun moveCursorDown(n: Int) {
+        require(n >= 0) { "n must be >= 0, got $n" }
+        cursorRow = (cursorRow + n).coerceAtMost(height - 1)
+    }
+
+    fun moveCursorLeft(n: Int) {
+        require(n >= 0) { "n must be >= 0, got $n" }
+        cursorCol = (cursorCol - n).coerceAtLeast(0)
+    }
+
+    fun moveCursorRight(n: Int) {
+        require(n >= 0) { "n must be >= 0, got $n" }
+        cursorCol = (cursorCol + n).coerceAtMost(width - 1)
     }
 }
