@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import terminal.model.BufferPosition
 import terminal.model.TerminalColor
 import terminal.model.TextAttributes
 import terminal.model.TextStyle
@@ -107,6 +108,64 @@ class TerminalBufferTest {
 
             assertThrows(IllegalArgumentException::class.java) {
                 buffer.moveCursorUp(-1)
+            }
+        }
+    }
+
+    @Nested
+    inner class ContentAccessTests {
+
+        @Test
+        fun getChar_returnsSpaceForBlankCell() {
+            val buffer = createBuffer()
+
+            val char = buffer.getChar(BufferPosition.Screen(row = 0, col = 0))
+
+            assertEquals(' ', char)
+        }
+
+        @Test
+        fun getAttributes_returnsDefaultForBlankCell() {
+            val buffer = createBuffer()
+
+            val attributes = buffer.getAttributes(BufferPosition.Screen(row = 1, col = 2))
+
+            assertEquals(TextAttributes(), attributes)
+        }
+
+        @Test
+        fun getLine_returnsEmptyStringForBlankLine() {
+            val buffer = createBuffer()
+
+            val line = buffer.getLine(row = 0, fromScrollback = false)
+
+            assertEquals("", line)
+        }
+
+        @Test
+        fun getScreenContent_returnsJoinedBlankLines() {
+            val buffer = createBuffer()
+
+            val content = buffer.getScreenContent()
+
+            assertEquals("\n\n", content)
+        }
+
+        @Test
+        fun getLine_rejectsScrollbackAccessBeforeImplemented() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getLine(row = 0, fromScrollback = true)
+            }
+        }
+
+        @Test
+        fun getChar_rejectsScrollbackAccessBeforeImplemented() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Scrollback(row = 0, col = 0))
             }
         }
     }

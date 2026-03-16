@@ -1,5 +1,6 @@
 package terminal
 
+import terminal.model.BufferPosition
 import terminal.model.TextAttributes
 
 class TerminalBuffer(
@@ -59,5 +60,34 @@ class TerminalBuffer(
     fun moveCursorRight(n: Int) {
         require(n >= 0) { "n must be >= 0, got $n" }
         cursorCol = (cursorCol + n).coerceAtMost(width - 1)
+    }
+
+    fun getChar(position: BufferPosition): Char {
+        val cell = when (position) {
+            is BufferPosition.Screen -> screenLine(position.row).getCell(position.col)
+            is BufferPosition.Scrollback -> throw IllegalArgumentException("Scrollback access not supported yet")
+        }
+        return if (cell.isEmpty) ' ' else cell.char
+    }
+
+    fun getAttributes(position: BufferPosition): TextAttributes {
+        return when (position) {
+            is BufferPosition.Screen -> screenLine(position.row).getCell(position.col).attributes
+            is BufferPosition.Scrollback -> throw IllegalArgumentException("Scrollback access not supported yet")
+        }
+    }
+
+    fun getLine(row: Int, fromScrollback: Boolean): String {
+        require(!fromScrollback) { "Scrollback access not supported yet" }
+        return screenLine(row).asString()
+    }
+
+    fun getScreenContent(): String {
+        return screen.joinToString("\n") { it.asString() }
+    }
+
+    private fun screenLine(row: Int): TerminalLine {
+        require(row in 0 until height) { "Row must be in 0 until $height, got $row" }
+        return screen.elementAt(row)
     }
 }
