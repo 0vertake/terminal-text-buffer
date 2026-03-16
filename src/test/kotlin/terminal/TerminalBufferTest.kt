@@ -226,5 +226,63 @@ class TerminalBufferTest {
         }
     }
 
+    @Nested
+    inner class ScrollbackTests {
+
+        @Test
+        fun writeText_scrollsSingleLineWhenPassingBottom() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 10)
+
+            buffer.writeText("abcdefg")
+
+            assertEquals("def\ng", buffer.getScreenContent())
+            val scrollback = scrollbackLines(buffer)
+            assertEquals(1, scrollback.size)
+            assertEquals("abc", scrollback[0].asString())
+        }
+
+        @Test
+        fun writeText_scrollsMultipleTimes() {
+            val buffer = TerminalBuffer(width = 2, height = 2, maxScrollbackSize = 10)
+
+            buffer.writeText("abcdef")
+
+            val scrollback = scrollbackLines(buffer)
+            assertEquals(2, scrollback.size)
+            assertEquals("ab", scrollback[0].asString())
+            assertEquals("cd", scrollback[1].asString())
+            assertEquals("ef\n", buffer.getScreenContent())
+        }
+
+        @Test
+        fun writeText_evictionHonorsScrollbackCapacity() {
+            val buffer = TerminalBuffer(width = 2, height = 2, maxScrollbackSize = 1)
+
+            buffer.writeText("abcdef")
+
+            val scrollback = scrollbackLines(buffer)
+            assertEquals(1, scrollback.size)
+            assertEquals("cd", scrollback[0].asString())
+        }
+
+        @Test
+        fun writeText_keepsCursorOnLastRowAfterScroll() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+
+            buffer.writeText("abcdef")
+
+            assertEquals(1, buffer.getCursorRow())
+            assertEquals(0, buffer.getCursorCol())
+        }
+    }
+
     private fun createBuffer(): TerminalBuffer = TerminalBuffer(width = 5, height = 3, maxScrollbackSize = 10)
+
+    @Suppress("UNCHECKED_CAST")
+    private fun scrollbackLines(buffer: TerminalBuffer): List<TerminalLine> {
+        val field = TerminalBuffer::class.java.getDeclaredField("scrollback")
+        field.isAccessible = true
+        val deque = field.get(buffer) as ArrayDeque<TerminalLine>
+        return deque.toList()
+    }
 }

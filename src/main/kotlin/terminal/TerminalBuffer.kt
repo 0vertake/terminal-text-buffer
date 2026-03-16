@@ -75,9 +75,7 @@ class TerminalBuffer(
                 Cell(char = char, isEmpty = false, attributes = currentAttributes, charWidth = 1)
             )
 
-            if (advanceCursorWithoutScroll()) {
-                break
-            }
+            advanceCursorWithScroll()
         }
     }
 
@@ -105,7 +103,7 @@ class TerminalBuffer(
         return screen.joinToString("\n") { it.asString() }
     }
 
-    private fun advanceCursorWithoutScroll(): Boolean {
+    private fun advanceCursorWithScroll() {
         cursorCol += 1
         if (cursorCol >= width) {
             cursorCol = 0
@@ -113,11 +111,18 @@ class TerminalBuffer(
         }
 
         if (cursorRow >= height) {
+            scrollUp()
             cursorRow = height - 1
-            return true
         }
+    }
 
-        return false
+    private fun scrollUp() {
+        val removed = screen.removeFirst()
+        scrollback.addLast(removed.copy())
+        if (scrollback.size > maxScrollbackSize) {
+            scrollback.removeFirst()
+        }
+        screen.addLast(TerminalLine(width))
     }
 
     private fun screenLine(row: Int): TerminalLine {
