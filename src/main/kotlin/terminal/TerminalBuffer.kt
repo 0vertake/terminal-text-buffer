@@ -29,4 +29,8 @@ class TerminalBuffer(
         }
         scrollback = ArrayDeque()
     }
+
+    fun setAttributes(attributes: TextAttributes) {
+        currentAttributes = attributes
+    }
 }
