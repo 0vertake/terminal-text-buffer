@@ -47,16 +47,6 @@ Open the HTML test report:
 start .\build\reports\tests\test\index.html
 ```
 
-## How Reviewers Should Validate
-
-This repository is a library-style project (no application `run` task).
-Validate using build and tests:
-
-```powershell
-.\gradlew.bat clean build
-.\gradlew.bat test
-```
-
 ## Notes
 
 - Wide character handling is `Char`-based and does not fully support surrogate-pair emoji/grapheme clusters.
