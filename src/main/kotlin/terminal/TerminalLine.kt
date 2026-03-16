@@ -1,6 +1,7 @@
 package terminal
 
 import terminal.model.Cell
+import terminal.model.TextAttributes
 
 class TerminalLine(val width: Int) {
     private val cells: Array<Cell>
@@ -20,10 +21,30 @@ class TerminalLine(val width: Int) {
         cells[col] = cell
     }
 
+    fun fill(char: Char, attributes: TextAttributes) {
+        for (i in cells.indices) {
+            cells[i] = Cell(char = char, isEmpty = false, attributes = attributes, charWidth = 1)
+        }
+    }
+
     fun fillEmpty() {
         for (i in cells.indices) {
             cells[i] = Cell.blank()
         }
+    }
+
+    fun asString(): String {
+        val lastContentIndex = cells.indexOfLast { !it.isEmpty }
+        if (lastContentIndex < 0) {
+            return ""
+        }
+
+        val builder = StringBuilder(lastContentIndex + 1)
+        for (i in 0..lastContentIndex) {
+            val cell = cells[i]
+            builder.append(if (cell.isEmpty) ' ' else cell.char)
+        }
+        return builder.toString()
     }
 
     fun copy(): TerminalLine {
