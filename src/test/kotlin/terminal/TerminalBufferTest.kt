@@ -150,6 +150,91 @@ class TerminalBufferTest {
 
             assertEquals("\n\n", content)
         }
+
+        @Test
+        fun getChar_invalidScreenPosition_throwsIllegalArgumentException() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Screen(row = 99, col = 0))
+            }
+        }
+
+        @Test
+        fun getChar_negativeScreenRow_throwsIllegalArgumentException() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Screen(row = -1, col = 0))
+            }
+        }
+
+        @Test
+        fun getChar_negativeScreenCol_throwsIllegalArgumentException() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Screen(row = 0, col = -1))
+            }
+        }
+
+        @Test
+        fun getChar_screenColBeyondWidth_throwsIllegalArgumentException() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Screen(row = 0, col = 5))
+            }
+        }
+
+        @Test
+        fun getChar_negativeScrollbackRow_throwsIllegalArgumentException() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Scrollback(row = -1, col = 0))
+            }
+        }
+
+        @Test
+        fun getChar_negativeScrollbackCol_throwsIllegalArgumentException() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Scrollback(row = 0, col = -1))
+            }
+        }
+
+        @Test
+        fun getChar_scrollbackColBeyondWidth_throwsIllegalArgumentException() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getChar(BufferPosition.Scrollback(row = 0, col = 3))
+            }
+        }
+
+        @Test
+        fun getAttributes_negativeScreenPosition_throwsIllegalArgumentException() {
+            val buffer = createBuffer()
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getAttributes(BufferPosition.Screen(row = -1, col = -1))
+            }
+        }
+
+        @Test
+        fun getAttributes_scrollbackRowBeyondSize_throwsIllegalArgumentException() {
+            val buffer = TerminalBuffer(width = 3, height = 2, maxScrollbackSize = 5)
+            buffer.writeText("abcdef")
+
+            assertThrows(IllegalArgumentException::class.java) {
+                buffer.getAttributes(BufferPosition.Scrollback(row = 1, col = 0))
+            }
+        }
     }
 
     @Nested
@@ -205,6 +290,17 @@ class TerminalBufferTest {
             buffer.writeText("X")
 
             assertEquals(attributes, buffer.getAttributes(BufferPosition.Screen(row = 0, col = 0)))
+        }
+
+        @Test
+        fun getLine_trailingExplicitSpaceWithAttributes_isNotTrimmed() {
+            val buffer = createBuffer()
+            buffer.setAttributes(TextAttributes(background = TerminalColor.Standard(1)))
+            buffer.setCursor(0, 0)
+
+            buffer.writeText("A ")
+
+            assertEquals("A ", buffer.getLine(row = 0, fromScrollback = false))
         }
     }
 
@@ -470,13 +566,26 @@ class TerminalBufferTest {
         }
 
         @Test
-        fun getFullContent_returnsScrollbackThenScreen() {
+        fun getLine_trailingExplicitSpaceWithAttributesInScrollback_isNotTrimmed() {
+            val buffer = TerminalBuffer(width = 2, height = 1, maxScrollbackSize = 5)
+            buffer.setAttributes(TextAttributes(background = TerminalColor.Standard(1)))
+            buffer.writeText("A ")
+
+            buffer.writeText("B")
+
+            val line = buffer.getLine(row = 0, fromScrollback = true)
+
+            assertEquals("A ", line)
+        }
+
+        @Test
+        fun getFullContent_includesTrailingNewlineWhenLastScreenLineIsBlank() {
             val buffer = TerminalBuffer(width = 2, height = 2, maxScrollbackSize = 5)
-            buffer.writeText("abcdef")
+            buffer.writeText("ab")
 
             val content = buffer.getFullContent()
 
-            assertEquals("ab\ncd\nef\n", content)
+            assertEquals("ab\n", content)
         }
     }
 
